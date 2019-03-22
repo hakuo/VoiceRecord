@@ -9,7 +9,7 @@ int main()
     while(1)
     {
         std::cin.get();
-        std::cout << "toggle" << std::endl;
+        std::cout << "Recording..." << std::endl;
         test.toggle_test();
     }
     

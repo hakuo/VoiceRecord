@@ -33,12 +33,13 @@ VoIP::~VoIP()
  */
 void VoIP::create_pipeline(int port)
 {
+    auto sample_rate = std::to_string(Media::SAMPLE_RATE);
     auto pipeline = "udpsrc port=" + std::to_string(port);
-    pipeline += " ! application/x-rtp,media=(string)audio, clock-rate=(int)44100,";
+    pipeline += " ! application/x-rtp,media=(string)audio, clock-rate=(int)" + sample_rate + ",";
     pipeline += " width=16, height=16, encoding-name=(string)L16, encoding-params=(string)1,";
     pipeline += " channels=(int)1, channel-positions=(int)1, payload=(int)96 ! rtpL16depay !";
     pipeline += " audioconvert ! audioresample ! audioconvert !";
-    pipeline += " audio/x-raw,format=S16LE,rate=44100,channels=1 ! appsink name=appsink1";
+    pipeline += " audio/x-raw,format=S16LE,rate=" + sample_rate + ",channels=1 ! appsink name=appsink1";
     g_print("Starting pipeline: %s\n", pipeline.c_str());
     m_pipeline = gst_parse_launch(pipeline.c_str(), NULL);
 }
@@ -74,13 +75,12 @@ void VoIP::config_pipeline()
 GstFlowReturn VoIP::new_sample(GstElement *sink, void *data)
 {
     GstSample *sample;
-
+    g_signal_emit_by_name(sink, "pull-sample", &sample);
     auto obj = reinterpret_cast<VoIP *>(data);
 
     if (obj->m_store_data)
     {
         // Retrieve the buffer
-        g_signal_emit_by_name(sink, "pull-sample", &sample);
         if (sample)
         {
             // TODO: store 3s to file
@@ -185,8 +185,9 @@ void VoIP::toggle_test()
     auto t = Timer();
     t.setTimeout([&]() {
         m_store_data = false;
-        Media::pcm_to_flac(m_current_file,
-                           Media::change_file_extension(m_current_file, Media::FLAC));
+        auto flac_file_name = Media::change_file_extension(m_current_file, Media::FLAC);
+        g_print("Stored the record to %s\n", flac_file_name.c_str());
+        Media::pcm_to_flac(m_current_file, flac_file_name);
         t.stop();
-    },5000); // Timer out 5s
+    },3000); // Timer out 3s
 }
