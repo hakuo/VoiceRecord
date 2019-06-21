@@ -78,8 +78,8 @@ GstFlowReturn VoIP::new_sample(GstElement *sink, void *data)
     g_signal_emit_by_name(sink, "pull-sample", &sample);
     auto obj = reinterpret_cast<VoIP *>(data);
 
-    if (obj->m_store_data)
-    {
+    //if (obj->m_store_data)
+    //{
         // Retrieve the buffer
         if (sample)
         {
@@ -87,9 +87,11 @@ GstFlowReturn VoIP::new_sample(GstElement *sink, void *data)
             auto buffer = gst_sample_get_buffer(sample);
             GstMapInfo map;
             gst_buffer_map(buffer, &map, GST_MAP_READ);
-
-            Media::write_pcm(obj->get_file_name(), (char *)map.data, map.size);
-
+            
+            if (obj->m_store_data)
+            {
+                Media::write_pcm(obj->get_file_name(), (char *)map.data, map.size);
+            }
             if (map.size > 0)
             {
                 gst_buffer_unmap(buffer, &map);
@@ -103,7 +105,7 @@ GstFlowReturn VoIP::new_sample(GstElement *sink, void *data)
             return GST_FLOW_OK;
         }
         return GST_FLOW_ERROR;
-    }
+    //}
 
     return GST_FLOW_OK;
 }
